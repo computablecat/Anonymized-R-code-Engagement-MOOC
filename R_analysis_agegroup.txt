@@ -1,0 +1,122 @@
+# Anonymized.
+#
+# Age by course for Table 1:  correspondence analysis and RC(M) association model
+library(MASS)
+library(vcd)
+library(ca)
+library(logmult)
+
+
+mooc <- read.table("table1_percents3.txt",header=TRUE)
+mooc
+
+mooc$age18 <- mooc$used * mooc$a18/100
+mooc$age18 <- round(mooc$age18,digits=0)
+mooc$age25 <- mooc$used * mooc$a25/100
+mooc$age25 <- round(mooc$age25,digits=0)
+mooc$age30 <- mooc$used * mooc$a30/100
+mooc$age30 <- round(mooc$age30,digits=0)
+mooc$age40 <- mooc$used * mooc$a40/100
+mooc$age40 <- round(mooc$age40,digits=0)
+mooc$age50 <- mooc$used * mooc$a50/100
+mooc$age50 <- round(mooc$age50,digits=0)
+mooc$age60 <- mooc$used * mooc$a60/100
+mooc$age60 <- round(mooc$age60,digits=0)
+
+
+###########################################
+# test of independence                    #
+###########################################
+long16 <-  reshape(mooc, varying = c('age18','age25','age30','age40','age50','age60'), 
+              timevar = "agegroup", v.names="count",
+              times = c('age18','age25','age30','age40','age50','age60'), direction = 'long')
+
+g0 <- glm(count ~ course + agegroup, data=long16, family=poisson)
+summary(g0)		
+1 - pchisq(g0$deviance,75)	  
+
+g.nb <- glm.nb(count ~ course + agegroup, data=long16)
+summary(g.nb)
+1 - pchisq(g.nb$deviance,75)	  # p=.02
+
+mooc.tab <- xtabs(count ~  course + agegroup, data=long16)
+prop.table(mooc.tab, 1) # row percentages
+prop.table(mooc.tab, 2) # column percentages
+
+#################################################
+# Correspondence analysis                       #
+#################################################
+par(mfrow=c(2,2))
+fit <- ca(mooc.tab)
+print(fit)                                              # basic results
+summary(fit)                                            # extended results
+plot(fit)                                               # symmetric map
+plot(fit, mass = TRUE, contrib = "absolute", map =
+   "rowgreen", arrows = c(FALSE, TRUE))                 # asymmetric map 
+   
+library(factoextra)
+   
+fviz_ca_biplot(fit, repel = TRUE)
+ 
+# ----  More control over figure
+ca.courses <- read.table("ca_course_cordinates.txt",header=TRUE)
+ca.age <- read.table("ca_age_coordinates.txt",header=TRUE)
+
+
+plot(ca.courses$Dim1,ca.courses$Dim2, 
+     pch=20,
+	 col="blue",
+	 cex=1.5,
+	 xlim=c(-2,2),
+	 ylim=c(-4,.2))
+	 xlab="Dimension 1 (7.18%)",
+	 ylab="Dimension 2 (15.6&)")
+	
+	
+library(gplots)
+balloonplot(t(mooc.tab), main ="age groups", xlab ="", ylab="",
+            label = FALSE, show.margins = FALSE)
+			
+###############################################
+# RC association model                        #
+###############################################
+
+par(mfrow=c(1,1))
+rc1 <- rc(mooc.tab, nd = 1, 
+   weighting=c("marginal"),
+   rowsup = NULL, colsup = NULL,
+   se = c("jackknife"),
+   nreplicates = 100, 
+   family = poisson, 
+   )	
+summary(rc1)
+plot(rc1, conf.int=0.90,"RC(1) Association Model"
+)   
+
+
+rc2 <- rc(mooc.tab, nd = 2, 
+   symmetric = FALSE, 
+   diagonal = FALSE,
+   weighting = c("none"),
+   rowsup = NULL, colsup = NULL,
+   se = c("jackknife"),
+   nreplicates = 100, 
+   family = poisson, 
+   )	
+summary(rc2)
+
+# -- Note that the scale values can be reflected and each time 
+#    you fit the model they can "flip".  I wanted age to go
+#    from young to old, but the order of scale values came out
+#    old to young so I just flipped them using rev.axes.
+#
+#    The same was true for axis 2:  wanted oldest high
+#
+#    Same as eigen vectors of a matrix: 
+#                 if (-1,1) is an eigenvector, so is (1,-1) 
+plot(rc2, 
+     rev.axes=c(TRUE,TRUE),
+	 conf.int=.90, 
+	 col=c("blue","red"),
+	 cex=1.5
+)

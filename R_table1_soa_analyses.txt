@@ -1,0 +1,177 @@
+# Anonymized
+#
+# engagement table 1 -- SOA
+
+library(MASS)
+library(vcd)
+
+
+( mooc <- read.table("table1_percents3.txt",header=TRUE) )
+
+#  How many total students
+sum(mooc$used)
+
+# Turn percents into frequencies
+mooc$soa <- mooc$used * mooc$SOA/100
+mooc$soa <- round(mooc$soa,digits=0)
+mooc$nosoa <- mooc$used*(1- mooc$SOA/100)
+mooc$nosoa <- round(mooc$nosoa,digits=0)
+
+# Check to make sure correct
+mooc
+
+# Reshape for glm and glm.nb
+long16 <-  reshape(mooc, varying = c('soa','nosoa'), 
+              timevar = "achieve", v.names="count",
+              times = c('soa','nosoa'), direction = 'long')
+
+# Create table 
+(g.tab <- xtabs(count~ course + achieve , data=long16))
+
+
+####################################################################
+# Test of independence: achievement (soa,no soa) x course (all 16) #
+####################################################################
+
+# This is just to make display of data, fitted values and residuals in 
+#  interpretatble w/rt courses.
+course_names <- as.data.frame(mooc$course)
+course_names$soa.data <- as.data.frame(cbind(mooc$soa, mooc$nosoa))
+
+# Compute standard chi-square tests
+(assocstats(g.tab))
+
+# Fit Poisson independence model 
+(g0 <- glm(count~ course + achieve, data=long16, family=poisson))
+summary(g0)
+
+# Fit Negative binomial model of independence
+g0.nb <- glm.nb(count~ course + achieve , data=long16)
+(summary(g0.nb))
+
+# -- Compute p-value for the model fit to data
+1-pchisq(g0.nb$deviance,g0.nb$df.residual)             # p<.01
+
+# -- haberman residuals and tabulate and attach course names
+haberman.nb <- rstandard(g0.nb,type="pearson")             
+haberman.mat2 <- matrix(haberman.nb,nrow=16,ncol=2)
+fits <- matrix(g0.nb$fitted,nrow=16,ncol=2)
+(results.0 <- as.data.frame(cbind(course_names, fits, haberman.mat2)))
+
+##############################################
+# Test within courses                        #
+##############################################
+
+# --- Computer Science
+var.levels <- expand.grid(achieve=c("soa","nosoa"),
+                         course=c("CS1","CS2")  )
+( cs <- data.frame(var.levels, 
+                 count=c(1711, 5245, 241, 867 ) ))
+m.cs <- glm(count~ course + achieve , data=cs,family=poisson)
+summary(m.cs)
+(pvalue <- 1-pchisq(m.cs$deviance,1) )                # p=.04
+haberman <- rstandard(m.cs,type="pearson")            
+(haberman.mat2 <- matrix(haberman,nrow=2,ncol=2))
+
+
+# --- Education
+var.levels <- expand.grid(achieve=c("soa","nosoa"),
+                    course=c("Educ1","Educ2")  )
+( educ <- data.frame(var.levels, 
+                 count=c(31, 384, 27, 263 ) ))
+m.educ <- glm(count~ course + achieve , data=educ,family=poisson)
+summary(m.educ)
+(pvalue <- 1-pchisq(m.educ$deviance,1) )             # p=.38
+haberman <- rstandard(m.educ,type="pearson")            
+(haberman.mat2 <- matrix(haberman,nrow=2,ncol=2))
+
+
+# -- Chemistry
+var.levels <- expand.grid(achieve=c("soa","nosoa"),
+                   course=c("Chem1","Chem2")  )
+( chem <- data.frame(var.levels, 
+                 count=c(217, 473, 70, 165) ))
+m.chem  <- glm(count~ course + achieve , data=chem,family=poisson)
+summary(m.chem)
+(pvalue <- 1-pchisq(m.chem$deviance,1) )             # p=.63
+haberman <- rstandard(m.chem,type="pearson")             
+(haberman.mat2 <- matrix(haberman,nrow=2,ncol=2))
+
+
+# -- Business
+var.levels <- expand.grid(achieve=c("soa","nosoa"),
+course=c("Bus1","Bus2","Bus3")  )
+( bus <- data.frame(var.levels, 
+                 count=c(144, 261, 94, 166, 65, 159) ))
+m.bus <- glm.nb(count~ course + achieve , data=bus)
+summary(m.bus)
+(pvalue <- 1-pchisq(m.bus$deviance,2) )               # p=.17
+haberman <- rstandard(m.bus,type="pearson")            
+(haberman.mat2 <- matrix(haberman,nrow=2,ncol=3))
+
+
+# -- Evironmental Science  
+var.levels <- expand.grid(achieve=c("soa","nosoa"),
+course=c("Env1","Env2","Env3","Env4","Env5","Env6")  )
+( env6 <- data.frame(var.levels, 
+                 count=c(408, 622, 
+				         592, 661, 
+						 247, 620, 
+						 206, 502, 
+						 201, 645, 
+						 114,319) ))
+m.env6<- glm.nb(count~ course + achieve , data=env6)
+summary(m.env6)
+(pvalue <- 1-pchisq(m.env6$deviance,5) )             # p=.04
+haberman.nb <- rstandard(m.env6,type="pearson")           
+(haberman.mat6 <- matrix(haberman.nb,nrow=2,ncol=6))
+
+# -- Env w/o 2 
+var.levels <- expand.grid(achieve=c("soa","nosoa"),
+course=c("Env1","Env3","Env4","Env5","Env6")  )
+( env5 <- data.frame(var.levels, 
+                 count=c(408, 622, 
+						 247, 620, 
+						 206, 502, 
+						 201, 645, 
+						 114,319) ))
+m.env5<- glm.nb(count~ course + achieve , data=env5)
+summary(m.env5)
+(pvalue <- 1-pchisq(m.env5$deviance,4) )           # p=.05
+haberman.nb <- rstandard(m.env5,type="pearson")           
+(haberman.mat5 <- matrix(haberman.nb,nrow=2,ncol=5))
+
+
+# -- env w/o env1 & env2 (i.e., 3,4,5,6)
+var.levels <- expand.grid(achieve=c("soa","nosoa"),
+course=c("Env3","Env4","Env5","Env6")  )
+( env4 <- data.frame(var.levels, 
+                 count=c(247, 620, 
+						 206, 502, 
+						 201, 645, 
+						 114,319) ))
+m.env4 <- glm.nb(count~ course + achieve , data=env4)
+summary(m.env)
+(pvalue <- 1-pchisq(m.env4$deviance,3) )           # p=.06
+haberman.nb <- rstandard(m.env4,type="pearson")           
+(haberman.mat4 <- matrix(haberman.nb,nrow=2,ncol=4))
+
+
+# -- Env 1 and 2
+var.levels <- expand.grid(achieve=c("soa","nosoa"),
+course=c("Env1","Env2")  )
+( env2 <- data.frame(var.levels, 
+                 count=c(408, 622, 
+				         592, 661) ))
+m.env2 <- glm(count~ course + achieve , data=env2, family=poisson)
+summary(m.env2)
+(pvalue <- 1-pchisq(m.env2$deviance,5) )           # p=.02
+haberman.nb <- rstandard(m.env2,type="pearson")           
+(haberman.mat2 <- matrix(haberman.nb,nrow=2,ncol=2))
+
+
+
+# -- Animal Science
+prop.test(89,218,p=.5)
+
+

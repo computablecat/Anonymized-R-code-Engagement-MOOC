@@ -1,0 +1,133 @@
+# Anonymized
+#
+# table 1 --- gender
+
+library(MASS)
+library(vcd)
+
+
+mooc <- read.table("table1_percents3.txt",header=TRUE)
+mooc
+
+sum(mooc$used)
+
+mooc$n.female <- mooc$used * mooc$female/100
+mooc$n.female <- round(mooc$n.female,digits=0)
+mooc$n.male <- mooc$used*(1- mooc$female/100)
+mooc$n.male <- round(mooc$n.male,digits=0)
+mooc
+
+
+#########################################################
+# Test of independence in whole table                   #
+#########################################################
+# -- reshape for glm and glm.nb
+long16 <-  reshape(mooc, varying = c('n.female','n.male'), 
+              timevar = "gender", v.names="count",
+              times = c('female','male'), direction = 'long')
+
+(g.tab <- xtabs(count~ course + gender , data=long16))
+(assocstats(g.tab))
+
+(g0 <- glm(count~ course + gender , data=long16,family=poisson))
+
+# Negative binomial
+(g0.nb <- glm.nb(count~ course + gender , data=long16))
+1-pchisq(g0.nb$deviance,15)
+# -- haberman residuals
+haberman.nb <- rstandard(g0.nb,type="pearson")             
+(haberman.mat2 <- matrix(haberman.nb,nrow=16,ncol=2))
+
+#####################################################
+# Independence excluding CS                         #
+#####################################################
+# -- Sub-set
+mooc15 <- subset(mooc,mooc$course!="CS1")
+mooc14 <- subset(mooc15,mooc15$course!="CS2")
+# -- reshape for glm.nb
+long14 <- reshape(mooc14, varying = c('n.female','n.male'), 
+              timevar = "gender", v.names="count",
+              times = c('female','male'), direction = 'long')
+# -- check			  
+long14
+
+# -- Fit independent
+(g1.nb <- glm.nb(count ~ course + gender, data=long14) )
+1-pchisq(g1.nb$deviance,14)
+# -- Haberman residuals
+haberman.nb <- rstandard(g1.nb,type="pearson")            
+(haberman.mat2 <- matrix(haberman.nb,nrow=14,ncol=2))
+ 
+
+#######################################################
+# Test within courses                                 #
+#######################################################
+
+# --- Computer Science ----
+var.levels <- expand.grid(gender=c("female","male"),
+course=c("CS1","CS2")  )
+( cs <- data.frame(var.levels, 
+                 count=c(1239, 5717, 228, 880) ))
+# ------- Only 2 offerings so have to use Poisson
+m.cs <- glm(count~ course + gender , data=cs,family=poisson)
+summary(m.android)
+(pvalue <- 1-pchisq(m.cs$deviance,1) )
+haberman <- rstandard(m.cs,type="pearson")             
+(haberman.mat2 <- matrix(haberman,nrow=2,ncol=2))
+
+
+# --- Education
+var.levels <- expand.grid(gender=c("female","male"),
+course=c("Educ1","Educ2")  )
+( educ <- data.frame(var.levels, 
+                 count=c(212,203,150,140) ))
+# ------- Only 2 offerings so have to use Poisson
+m.educ  <- glm(count~ course + gender , data=educ ,family=poisson)
+summary(m.educ )
+(pvalue <- 1-pchisq(m.educ$deviance,1) )
+haberman <- rstandard(m.educ ,type="pearson")             
+(haberman.mat2 <- matrix(haberman,nrow=2,ncol=2))
+
+
+# -- Chemistry
+var.levels <- expand.grid(gender=c("female","male"),
+course=c("Chem1","Chem2")  )
+( chem <- data.frame(var.levels, 
+                 count=c(293, 397, 88, 147) ))
+# ------- Only 2 offerings so have to use Poisson
+m.chem  <- glm(count~ course + gender , data=chem ,family=poisson)
+summary(m.chem )
+(pvalue <- 1-pchisq(m.chem$deviance,1) )
+haberman <- rstandard(m.chem ,type="pearson")            
+(haberman.mat2 <- matrix(haberman,nrow=2,ncol=2))
+
+
+# -- Business
+var.levels <- expand.grid(gender=c("female","male"),
+course=c("Bus1","Bus2","Bus3")  )
+( bus <- data.frame(var.levels, 
+                 count=c(174, 231,  137, 123,  107, 117) ))
+m.bus <- glm.nb(count~ course + gender , data=bus)
+summary(m.bus)
+(pvalue <- 1-pchisq(m.bus$deviance,2) )
+haberman <- rstandard(m.subsis,type="pearson")            
+(haberman.mat2 <- matrix(haberman,nrow=2,ncol=3))
+
+
+# -- Environmental Science
+var.levels <- expand.grid(gender=c("female","male"),
+course=c("Env1","Env2","Env4","Env5","Env6","Env7")  )
+( env <- data.frame(var.levels, 
+                 count=c(465, 565,  687, 566,  420, 447,  369, 339, 394, 452, 223, 210) ))
+m.env<- glm.nb(count~ course + gender , data=env)
+summary(m.env)
+(pvalue <- 1-pchisq(m.env$deviance,5) )
+haberman.nb <- rstandard(m.env,type="pearson")           
+(haberman.mat2 <- matrix(haberman.nb,nrow=2,ncol=6))
+
+
+# -- Animal science
+# ------- Only 1 offering  use test proportion
+prop.test(112,218,p=.5)
+
+

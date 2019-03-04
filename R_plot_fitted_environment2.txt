@@ -1,0 +1,88 @@
+# Anonymized
+# Plot results from model for engagement for evironmental science-2
+# 
+
+- 
+fitted <- read.table(file="fitted_susta2.txt",header=TRUE)
+names(fitted)
+
+attach(fitted)
+
+################# layout with legend below figures ###################
+m <- matrix(c(1,2,3,4,5,5),nrow =3,ncol = 2,byrow = TRUE)
+
+layout(mat = m,heights = c(0.49,0.49,0.2))
+
+#for (i in 1:6){
+#    par(mar = c(2,2,1,1))
+#    plot(runif(5),runif(5),xlab = "",ylab = "")
+#}
+
+par(mar = c(2,2,1,1))
+# female, no SOA
+plot(week,f_noSOA2,
+	type="l",
+	lwd=2, lty=1,
+	col="blueviolet",
+	ylim=c(0,400),
+	ylab=("Engagment"))
+text(3,375,"Female, No SOA",cex=2)
+
+lines(week,f_noSOA3,type="l",col="red",lwd=2,lty=2)
+lines(week,f_noSOA4,type="l",col="blue",lwd=2, lty=3)
+lines(week,f_noSOA5,type="l",col="darkgreen",lwd=2, lty=4)
+lines(week,f_noSOA6,type="l",col="black",lwd=2, lty=5)
+lines(week,f_noSOA7,type="l",col="darkcyan",lwd=2, lty=6)
+
+
+# female, SOA
+plot(week,f_SOA2,
+	type="l",
+	lwd=2, lty=1,
+	col="blueviolet",
+	ylim=c(0,400),
+	ylab=("Engagment"))
+text(3,375,"Female, SOA",cex=2)
+
+lines(week,f_SOA3,type="l",col="red",lwd=2,lty=2)
+lines(week,f_SOA4,type="l",col="blue",lwd=2, lty=3)
+lines(week,f_SOA5,type="l",col="darkgreen",lwd=2, lty=4)
+lines(week,f_SOA6,type="l",col="black",lwd=2, lty=5)
+lines(week,f_SOA7,type="l",col="darkcyan",lwd=2, lty=6)
+
+# male, no SOA
+plot(week,m_noSOA2,
+	type="l",
+	lwd=2, lty=1,
+	col="blueviolet",
+	ylim=c(0,400),
+	ylab=("Engagment"))
+text(3,375,"Male, No SOA",cex=2)
+
+lines(week,m_noSOA3,type="l",col="red",lwd=2,lty=2)
+lines(week,m_noSOA4,type="l",col="blue",lwd=2, lty=3)
+lines(week,m_noSOA5,type="l",col="darkgreen",lwd=2, lty=4)
+lines(week,m_noSOA6,type="l",col="black",lwd=2, lty=5)
+lines(week,m_noSOA7,type="l",col="darkcyan",lwd=2, lty=6)
+
+# male, SOA
+plot(week,m_SOA2,
+	type="l",
+	lwd=2, lty=1,
+	col="blueviolet",
+	ylim=c(0,400),
+	ylab=("Engagment"))
+text(2.6,375,"Male, SOA",cex=2)
+
+lines(week,m_SOA3,type="l",col="red",lwd=2,lty=2)
+lines(week,m_SOA4,type="l",col="blue",lwd=2, lty=3)
+lines(week,m_SOA5,type="l",col="darkgreen",lwd=2, lty=4)
+lines(week,m_SOA6,type="l",col="black",lwd=2, lty=5)
+lines(week,m_SOA7,type="l",col="darkcyan",lwd=2, lty=6)
+
+plot(1, type = "n", axes=FALSE, xlab="", ylab="")
+plot_colors <- c("blueviolet","red","blue","darkgreen","black","darkcyan")
+legend(x = "top",inset = 0,
+        legend = c("18-24", "25-29", "30-39","40-49", "50-59","60 or over"), 
+        col=plot_colors, lwd=5, cex=1.1, horiz = TRUE,
+		lty=c(6,5,4,3,2,1))
